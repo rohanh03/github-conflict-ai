@@ -1,0 +1,27 @@
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+class Settings(BaseSettings):
+    # GitHub App
+    github_app_id: int = 0
+    github_private_key_path: str = ""
+    github_webhook_secret: str = ""
+    github_token: str = ""  # Fallback: personal access token
+
+    # LLM
+    llm_api_base: str = "https://api.openai.com/v1"
+    llm_api_key: str = ""
+    llm_model: str = "gpt-oss-120b"
+
+    # Slack
+    slack_webhook_url: str = ""  # Optional — empty = disabled
+
+    # Local
+    repo_clone_dir: str = "/tmp/conflict-ai-repos"
+    log_level: str = "INFO"
+    max_diff_lines: int = 4000  # Truncation limit for LLM input
+
+    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
+
+
+settings = Settings()
