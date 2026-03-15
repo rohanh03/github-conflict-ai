@@ -122,6 +122,7 @@ async def _notify(report: ConflictReport, pr_number: int | None = None) -> None:
 
 
 async def on_push(payload: dict, token: str | None = None) -> None:
+    #mar15 TODO: thread token through to get_repo/post_comment for GitHub App auth
     """Handle a push event — compare pushed branch against open PR branches."""
     ref = payload.get("ref", "")
     if not ref.startswith("refs/heads/"):
@@ -153,6 +154,7 @@ async def on_push(payload: dict, token: str | None = None) -> None:
 
 
 async def on_pr(payload: dict, token: str | None = None) -> None:
+    #mar15 TODO: thread token through to get_repo/post_comment for GitHub App auth
     """Handle a pull_request event — compare PR branch against base and other PRs."""
     pr_data = payload.get("pull_request", {})
     if not pr_data:

@@ -26,8 +26,9 @@ async def github_webhook(request: Request, background_tasks: BackgroundTasks):
 
     repo_name = payload.get("repository", {}).get("full_name", "unknown")
 
-    # Extract installation id (if this is a GitHub App event)
-    installation_id = payload.get("installation", {}).get("id")
+    #mar15 guard against installation being None (not just missing) to avoid AttributeError
+    installation = payload.get("installation") or {}
+    installation_id = installation.get("id")
 
     logger.info(
         "Webhook received: event=%s repo=%s installation=%s",

@@ -1,8 +1,10 @@
 import logging
 import os
+
 import httpx
 
 logger = logging.getLogger(__name__)
+
 
 class OpenAICompatClient:
     """LLM client compatible with any OpenAI-style chat completions API."""
@@ -14,6 +16,10 @@ class OpenAICompatClient:
             logger.info("No OPENAI_API_KEY found. Using hackathon GPT-OSS server with dummy key.")
             api_base = hackathon_base
             api_key = "test"
+
+        #mar15 default api_base to hackathon URL if None to avoid AttributeError on rstrip
+        if not api_base:
+            api_base = hackathon_base
 
         self.api_base = api_base.rstrip("/")
         self.api_key = api_key

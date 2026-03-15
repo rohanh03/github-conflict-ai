@@ -9,6 +9,8 @@ Usage:
 import hashlib
 import hmac
 import json
+#mar15 moved os import to top with other stdlib imports
+import os
 import sys
 import subprocess
 
@@ -21,8 +23,6 @@ dotenv_path = Path(__file__).parent.parent / ".env"
 if dotenv_path.exists():
     load_dotenv(dotenv_path)
 
-import os
-
 SERVER_URL = "http://localhost:8000/webhooks/github"
 WEBHOOK_SECRET = os.getenv("GITHUB_WEBHOOK_SECRET", "")
 
@@ -31,6 +31,7 @@ REPO_FULL_NAME = "rohanh03/github-conflict-ai"
 REPO_CLONE_URL = f"https://github.com/{REPO_FULL_NAME}.git"
 LOCAL_REPO_PATH = Path(__file__).parent.parent  # assumes script is in repo folder
 INSTALLATION_ID = int(os.getenv("GITHUB_APP_INSTALLATION_ID", "123456"))
+
 
 def get_latest_sha(branch: str) -> str:
     """Get the latest commit SHA for a branch in the local git repo."""
@@ -43,14 +44,16 @@ def get_latest_sha(branch: str) -> str:
         print(f"Error: Could not find branch '{branch}' in local repo")
         sys.exit(1)
 
+
 # Automatically get SHAs
 LATEST_SHA = get_latest_sha("feature-test-comment")  # branch you are testing
-PREVIOUS_SHA = get_latest_sha("main")  # use main branch SHA for 'before'
-MAIN_LATEST_SHA = get_latest_sha("main")  # latest SHA of main branch
+#mar15 removed redundant MAIN_LATEST_SHA (identical to PREVIOUS_SHA)
+MAIN_SHA = get_latest_sha("main")
 
 PUSH_PAYLOAD = {
-    "ref": f"refs/heads/feature-test-comment",
-    "before": PREVIOUS_SHA,
+    #mar15 removed unnecessary f-string (no interpolation)
+    "ref": "refs/heads/feature-test-comment",
+    "before": MAIN_SHA,
     "after": LATEST_SHA,
     "repository": {
         "full_name": REPO_FULL_NAME,
@@ -75,7 +78,7 @@ PR_PAYLOAD = {
         "title": "Test PR for bot",
         "user": {"login": "alessandroiucci"},
         "head": {"ref": "feature-test-comment", "sha": LATEST_SHA},
-        "base": {"ref": "main", "sha": MAIN_LATEST_SHA},
+        "base": {"ref": "main", "sha": MAIN_SHA},
         "body": "Testing bot comments on PR.",
     },
     "repository": {

@@ -1,22 +1,23 @@
 import logging
 
 from app.github_client.client import get_pr_commits, get_pr_diff, get_repo, post_comment
+#mar15 removed duplicate OpenAICompatClient import
 from app.llm.openai_compat import OpenAICompatClient
 from app.llm.prompts import PR_SUMMARY_SYSTEM, PR_SUMMARY_USER
 from app.notifications.slack import send_slack_pr_summary
 from app.utils.git_ops import truncate_diff
 from config import settings
-from app.llm.openai_compat import OpenAICompatClient
 
 
 logger = logging.getLogger(__name__)
 
 
 def _get_llm() -> OpenAICompatClient:
+    #mar15 use settings with fallback instead of hardcoded hackathon URL
     return OpenAICompatClient(
-        api_base="https://vjioo4r1vyvcozuj.us-east-2.aws.endpoints.huggingface.cloud/v1",
-        api_key="test",  # no real key needed
-        model="openai/gpt-oss-120b",
+        api_base=settings.llm_api_base,
+        api_key=settings.llm_api_key,
+        model=settings.llm_model,
     )
 
 
@@ -30,12 +31,15 @@ async def on_pr_summarize(payload: dict) -> None:
     pr_number = pr_data["number"]
     pr_title = pr_data.get("title", "")
     author = pr_data.get("user", {}).get("login", "unknown")
+    #mar15 added sender tracking for audit logging
     sender = payload.get("sender", {}).get("login", "unknown")
     base_branch = pr_data["base"]["ref"]
     head_branch = pr_data["head"]["ref"]
 
+    #mar15 restored repo/PR log line alongside new sender log
+    logger.info("Generating PR summary for %s#%d", repo_full_name, pr_number)
     logger.info("PR author=%s triggered_by=%s", author, sender)
-    
+
     repo = get_repo(repo_full_name)
 
     # Gather context

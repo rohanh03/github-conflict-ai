@@ -13,7 +13,6 @@ async def dispatch_event(event_type: str, payload: dict, installation_id: int | 
     logger.info("Dispatching event=%s action=%s", event_type, action)
 
     try:
-
         token = None
         if installation_id:
             token = await get_installation_token(installation_id)
@@ -28,7 +27,7 @@ async def dispatch_event(event_type: str, payload: dict, installation_id: int | 
         ):
             await on_pr(payload, token)
             await on_pr_summarize(payload)
-            
+
         elif event_type == "issue_comment" and action == "created":
             body = payload.get("comment", {}).get("body", "")
             if "@conflict-ai" in body.lower():

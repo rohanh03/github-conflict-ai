@@ -9,6 +9,12 @@ def generate_app_jwt():
     app_id = os.getenv("GITHUB_APP_ID")
     private_key_path = os.getenv("GITHUB_PRIVATE_KEY_PATH")
 
+    #mar15 validate env vars before use to avoid TypeError on Path(None)
+    if not app_id:
+        raise RuntimeError("GITHUB_APP_ID environment variable is not set")
+    if not private_key_path:
+        raise RuntimeError("GITHUB_PRIVATE_KEY_PATH environment variable is not set")
+
     private_key = Path(private_key_path).read_text()
 
     payload = {
@@ -31,6 +37,6 @@ async def get_installation_token(installation_id: int):
                 "Accept": "application/vnd.github+json",
             },
         )
-
-    resp.raise_for_status()
-    return resp.json()["token"]
+        #mar15 moved raise_for_status inside async with block so response is still valid
+        resp.raise_for_status()
+        return resp.json()["token"]
