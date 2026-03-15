@@ -32,7 +32,18 @@ function StepIndicator({ current }) {
   )
 }
 
+// mar15 fixed: use conditional classes instead of disabled attr for gradient button
 function AuthModeStep({ authMode, setAuthMode, onNext }) {
+  const handleSelect = (id) => {
+    setAuthMode(id)
+  }
+
+  const handleContinue = () => {
+    if (authMode) {
+      onNext()
+    }
+  }
+
   return (
     <div>
       <h2 className="text-2xl font-bold text-white mb-2">Choose Authentication</h2>
@@ -55,10 +66,11 @@ function AuthModeStep({ authMode, setAuthMode, onNext }) {
         ].map((opt) => (
           <button
             key={opt.id}
-            onClick={() => setAuthMode(opt.id)}
-            className={`text-left rounded-xl border p-6 transition-all ${
+            type="button"
+            onClick={() => handleSelect(opt.id)}
+            className={`text-left rounded-xl border p-6 transition-all cursor-pointer ${
               authMode === opt.id
-                ? 'border-blue-500 bg-blue-500/10 ring-1 ring-blue-500/30'
+                ? 'border-blue-500 bg-blue-500/10 ring-2 ring-blue-500/30'
                 : 'border-slate-700 bg-slate-900/50 hover:border-slate-600'
             }`}
           >
@@ -77,9 +89,14 @@ function AuthModeStep({ authMode, setAuthMode, onNext }) {
 
       <div className="mt-8 flex justify-center">
         <button
-          onClick={onNext}
+          type="button"
+          onClick={handleContinue}
           disabled={!authMode}
-          className="px-8 py-3 rounded-xl bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold disabled:opacity-40 disabled:cursor-not-allowed hover:shadow-lg hover:shadow-blue-500/25 transition-all"
+          className={`px-8 py-3 rounded-xl font-semibold transition-all ${
+            authMode
+              ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white hover:shadow-lg hover:shadow-blue-500/25 cursor-pointer'
+              : 'bg-slate-800 text-slate-500 cursor-not-allowed opacity-40'
+          }`}
         >
           Continue →
         </button>
