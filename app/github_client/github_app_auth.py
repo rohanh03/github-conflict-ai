@@ -2,18 +2,20 @@ import jwt
 import time
 import httpx
 from pathlib import Path
-import os
+
+#mar15 use settings from config.py instead of os.getenv to pick up .env values via pydantic-settings
+from config import settings
 
 
 def generate_app_jwt():
-    app_id = os.getenv("GITHUB_APP_ID")
-    private_key_path = os.getenv("GITHUB_PRIVATE_KEY_PATH")
+    app_id = settings.github_app_id
+    private_key_path = settings.github_private_key_path
 
-    #mar15 validate env vars before use to avoid TypeError on Path(None)
+    #mar15 validate config values before use (defaults are 0 and "")
     if not app_id:
-        raise RuntimeError("GITHUB_APP_ID environment variable is not set")
+        raise RuntimeError("GITHUB_APP_ID is not configured in .env or environment")
     if not private_key_path:
-        raise RuntimeError("GITHUB_PRIVATE_KEY_PATH environment variable is not set")
+        raise RuntimeError("GITHUB_PRIVATE_KEY_PATH is not configured in .env or environment")
 
     private_key = Path(private_key_path).read_text()
 
