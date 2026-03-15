@@ -10,3 +10,7 @@ build/
 /tmp/
 .venv/
 venv/
+
+#mar15 frontend build artifacts and dependencies
+frontend/node_modules/
+frontend/dist/
