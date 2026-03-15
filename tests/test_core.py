@@ -378,7 +378,8 @@ class TestTruncateDiff:
         diff = "\n".join(f"line{i}" for i in range(100))
         result = truncate_diff(diff, max_lines=10)
         lines = result.splitlines()
-        assert len(lines) == 11  # 10 lines + truncation notice
+        #mar15 truncate_diff adds blank line before notice: 10 + blank + notice = 12
+        assert len(lines) == 12  # 10 lines + blank line + truncation notice
         assert "TRUNCATED" in lines[-1]
         assert "90 lines omitted" in lines[-1]
 
