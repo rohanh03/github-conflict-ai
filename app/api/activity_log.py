@@ -6,6 +6,7 @@ Used by the dashboard to show live activity without a database.
 
 from collections import deque
 from datetime import datetime, timezone
+from typing import Optional
 
 #mar15 cap at 100 entries to prevent unbounded memory growth
 _activity_log: deque[dict] = deque(maxlen=100)
@@ -14,7 +15,7 @@ _activity_log: deque[dict] = deque(maxlen=100)
 def log_event(
     event_type: str,
     repo: str = "",
-    pr_number: int | None = None,
+    pr_number: Optional[int] = None,
     action: str = "",
     summary: str = "",
     conflicts_found: int = 0,

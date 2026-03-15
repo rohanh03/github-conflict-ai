@@ -1,4 +1,5 @@
 import logging
+from typing import Optional  #mar15 Python 3.9 compat
 
 from app.api.activity_log import log_event  #mar15 wire activity logging for dashboard
 from app.conflict.detector import on_push, on_pr
@@ -8,7 +9,7 @@ from app.github_client.github_app_auth import get_installation_token
 logger = logging.getLogger(__name__)
 
 
-async def dispatch_event(event_type: str, payload: dict, installation_id: int | None = None) -> None:
+async def dispatch_event(event_type: str, payload: dict, installation_id: Optional[int] = None) -> None:
     """Route GitHub webhook events to the appropriate handler."""
     action = payload.get("action", "")
     logger.info("Dispatching event=%s action=%s", event_type, action)
