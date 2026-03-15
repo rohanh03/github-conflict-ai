@@ -132,7 +132,7 @@ async def on_push(payload: dict, token: str | None = None) -> None:
 
     logger.info("Push to %s on %s — running conflict scan", pushed_branch, repo_full_name)
 
-    repo = get_repo(repo_full_name)
+    repo = get_repo(repo_full_name, token)
     repo_path = await ensure_repo_cloned(repo)
 
     # Compare against open PR branches
@@ -168,7 +168,7 @@ async def on_pr(payload: dict, token: str | None = None) -> list[ConflictReport]
         if not pr_url:
             return all_reports
         repo_full_name = payload["repository"]["full_name"]
-        repo = get_repo(repo_full_name)
+        repo = get_repo(repo_full_name, token)
         pr_number = issue["number"]
         pr_obj = repo.get_pull(pr_number)
         head_branch = pr_obj.head.ref
@@ -187,7 +187,7 @@ async def on_pr(payload: dict, token: str | None = None) -> list[ConflictReport]
         base_branch,
     )
 
-    repo = get_repo(repo_full_name)
+    repo = get_repo(repo_full_name, token)
     repo_path = await ensure_repo_cloned(repo)
 
     # Compare PR branch against base

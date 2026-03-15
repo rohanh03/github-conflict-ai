@@ -83,7 +83,7 @@ async def on_pr_summarize(payload: dict, conflict_reports: list[ConflictReport] 
     logger.info("Generating PR summary for %s#%d", repo_full_name, pr_number)
     logger.info("PR author=%s triggered_by=%s", author, sender)
 
-    repo = get_repo(repo_full_name)
+    repo = get_repo(repo_full_name, token)
 
     # Gather context
     diff_content = get_pr_diff(repo, pr_number)
