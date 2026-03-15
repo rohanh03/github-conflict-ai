@@ -6,6 +6,7 @@ class Settings(BaseSettings):
     github_app_id: int = 0
     github_private_key_path: str = ""
     github_webhook_secret: str = ""
+    github_app_installation_id: int | None = None
     github_token: str = ""  # Fallback: personal access token
 
     # LLM

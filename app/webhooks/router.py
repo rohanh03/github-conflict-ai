@@ -16,7 +16,6 @@ async def github_webhook(request: Request, background_tasks: BackgroundTasks):
     body = await request.body()
     signature = request.headers.get("X-Hub-Signature-256", "")
 
-    # Verify signature if a secret is configured
     if settings.github_webhook_secret:
         if not verify_signature(body, signature, settings.github_webhook_secret):
             logger.warning("Invalid webhook signature")
@@ -25,12 +24,23 @@ async def github_webhook(request: Request, background_tasks: BackgroundTasks):
     event_type = request.headers.get("X-GitHub-Event", "")
     payload = await request.json()
 
+    repo_name = payload.get("repository", {}).get("full_name", "unknown")
+
+    # Extract installation id (if this is a GitHub App event)
+    installation_id = payload.get("installation", {}).get("id")
+
     logger.info(
-        "Webhook received: event=%s repo=%s",
+        "Webhook received: event=%s repo=%s installation=%s",
         event_type,
-        payload.get("repository", {}).get("full_name", "unknown"),
+        repo_name,
+        installation_id,
     )
 
-    # Process in background so we return 200 within GitHub's 10s timeout
-    background_tasks.add_task(dispatch_event, event_type, payload)
+    background_tasks.add_task(
+        dispatch_event,
+        event_type,
+        payload,
+        installation_id,
+    )
+
     return {"status": "accepted"}

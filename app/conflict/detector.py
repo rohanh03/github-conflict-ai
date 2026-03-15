@@ -121,7 +121,7 @@ async def _notify(report: ConflictReport, pr_number: int | None = None) -> None:
     await send_slack_conflict_alert(report)
 
 
-async def on_push(payload: dict) -> None:
+async def on_push(payload: dict, token: str | None = None) -> None:
     """Handle a push event — compare pushed branch against open PR branches."""
     ref = payload.get("ref", "")
     if not ref.startswith("refs/heads/"):
@@ -152,7 +152,7 @@ async def on_push(payload: dict) -> None:
             await _notify(report, pr_number=pr.number)
 
 
-async def on_pr(payload: dict) -> None:
+async def on_pr(payload: dict, token: str | None = None) -> None:
     """Handle a pull_request event — compare PR branch against base and other PRs."""
     pr_data = payload.get("pull_request", {})
     if not pr_data:
