@@ -45,12 +45,13 @@ async def clone_or_fetch(clone_url: str, repo_path: str) -> str:
         await _run(["git", "fetch", "--all", "--prune"], cwd=repo_path)
     else:
         os.makedirs(repo_path, exist_ok=True)
+        #mar15 removed --depth=50 so all remote branch refs are available for merge-base
         result = await _run(
-            ["git", "clone", "--depth=50", clone_url, repo_path]
+            ["git", "clone", clone_url, repo_path]
         )
         if not result.ok:
             raise RuntimeError(f"git clone failed: {result.stderr}")
-        # Fetch all remote branches
+        #mar15 fetch all remote branches so origin/<branch> refs resolve correctly
         await _run(["git", "fetch", "--all"], cwd=repo_path)
     return repo_path
 
