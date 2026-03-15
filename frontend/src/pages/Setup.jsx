@@ -109,13 +109,19 @@ function CredentialsStep({ authMode, creds, setCreds, onNext, onBack }) {
   const [saving, setSaving] = useState(false)
   const [result, setResult] = useState(null)
 
+  // mar15 added try/catch so button doesn't get stuck on network failure
   const save = async () => {
     setSaving(true)
     setResult(null)
-    const res = await api.saveAuth({ mode: authMode, ...creds })
-    setResult(res)
-    setSaving(false)
-    if (res.success) setTimeout(onNext, 600)
+    try {
+      const res = await api.saveAuth({ mode: authMode, ...creds })
+      setResult(res)
+      if (res.success) setTimeout(onNext, 600)
+    } catch (e) {
+      setResult({ success: false, message: `Connection failed: ${e.message}` })
+    } finally {
+      setSaving(false)
+    }
   }
 
   return (
@@ -203,12 +209,19 @@ function LLMStep({ llm, setLLM, onNext, onBack }) {
   const [saving, setSaving] = useState(false)
   const [result, setResult] = useState(null)
 
+  // mar15 added try/catch so button doesn't get stuck on network failure
   const save = async () => {
     setSaving(true)
-    const res = await api.saveLLM(llm)
-    setResult(res)
-    setSaving(false)
-    if (res.success) setTimeout(onNext, 600)
+    setResult(null)
+    try {
+      const res = await api.saveLLM(llm)
+      setResult(res)
+      if (res.success) setTimeout(onNext, 600)
+    } catch (e) {
+      setResult({ success: false, message: `Connection failed: ${e.message}` })
+    } finally {
+      setSaving(false)
+    }
   }
 
   return (
@@ -274,11 +287,18 @@ function LLMStep({ llm, setLLM, onNext, onBack }) {
 function SlackStep({ slack, setSlack, onNext, onBack }) {
   const [saving, setSaving] = useState(false)
 
+  // mar15 added try/catch so button doesn't get stuck on network failure
   const save = async () => {
     setSaving(true)
-    await api.saveSlack({ slack_webhook_url: slack })
-    setSaving(false)
-    onNext()
+    try {
+      await api.saveSlack({ slack_webhook_url: slack })
+      onNext()
+    } catch (e) {
+      // still advance — slack is optional
+      onNext()
+    } finally {
+      setSaving(false)
+    }
   }
 
   return (
