@@ -10,9 +10,10 @@ class Settings(BaseSettings):
     github_token: str = ""  # Fallback: personal access token
 
     # LLM
-    llm_api_base: str = "https://api.openai.com/v1"
-    llm_api_key: str = ""
-    llm_model: str = "gpt-oss-120b"
+    #mar15 default to hackathon GPT-OSS server so app works out of the box
+    llm_api_base: str = "https://vjioo4r1vyvcozuj.us-east-2.aws.endpoints.huggingface.cloud/v1"
+    llm_api_key: str = "test"
+    llm_model: str = "openai/gpt-oss-120b"
 
     # Slack
     slack_webhook_url: str = ""  # Optional — empty = disabled
