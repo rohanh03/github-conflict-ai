@@ -21,12 +21,12 @@ async def github_webhook(request: Request, background_tasks: BackgroundTasks):
             logger.warning("Invalid webhook signature")
             raise HTTPException(status_code=401, detail="Invalid signature")
 
-    event_type = request.headers.get("X-GitHub-Event", "")
+    # GitHub always sends event_type like "push", "pull_request", "issue_comment"
+    event_type = request.headers.get("X-GitHub-Event", "").split(".")[0]  # normalize just in case
     payload = await request.json()
 
     repo_name = payload.get("repository", {}).get("full_name", "unknown")
 
-    #mar15 guard against installation being None (not just missing) to avoid AttributeError
     installation = payload.get("installation") or {}
     installation_id = installation.get("id")
 

@@ -34,8 +34,7 @@ async def dispatch_event(event_type: str, payload: dict, installation_id: Option
         ):
             #mar15 capture conflict reports from on_pr and pass to summarizer
             conflict_reports = await on_pr(payload, token)
-            await on_pr_summarize(payload, conflict_reports=conflict_reports)
-            #mar15 log PR event with conflict count to activity feed
+            await on_pr_summarize(payload, token=token, conflict_reports=conflict_reports)            #mar15 log PR event with conflict count to activity feed
             pr_num = payload.get("pull_request", {}).get("number")
             n_conflicts = sum(len(r.conflicts) for r in (conflict_reports or []))
             log_event(
