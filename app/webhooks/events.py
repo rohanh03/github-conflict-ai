@@ -25,8 +25,9 @@ async def dispatch_event(event_type: str, payload: dict, installation_id: int | 
             "synchronize",
             "reopened",
         ):
-            await on_pr(payload, token)
-            await on_pr_summarize(payload)
+            #mar15 capture conflict reports from on_pr and pass to summarizer
+            conflict_reports = await on_pr(payload, token)
+            await on_pr_summarize(payload, conflict_reports=conflict_reports)
 
         elif event_type == "issue_comment" and action == "created":
             body = payload.get("comment", {}).get("body", "")

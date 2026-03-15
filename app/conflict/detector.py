@@ -153,16 +153,20 @@ async def on_push(payload: dict, token: str | None = None) -> None:
             await _notify(report, pr_number=pr.number)
 
 
-async def on_pr(payload: dict, token: str | None = None) -> None:
+#mar15 changed return type to list[ConflictReport] so callers can use conflict data
+async def on_pr(payload: dict, token: str | None = None) -> list[ConflictReport]:
     #mar15 TODO: thread token through to get_repo/post_comment for GitHub App auth
     """Handle a pull_request event — compare PR branch against base and other PRs."""
+    #mar15 collect all conflict reports to return to caller
+    all_reports: list[ConflictReport] = []
+
     pr_data = payload.get("pull_request", {})
     if not pr_data:
         # Handle issue_comment trigger (on-demand via @conflict-ai)
         issue = payload.get("issue", {})
         pr_url = issue.get("pull_request", {}).get("url")
         if not pr_url:
-            return
+            return all_reports
         repo_full_name = payload["repository"]["full_name"]
         repo = get_repo(repo_full_name)
         pr_number = issue["number"]
@@ -193,6 +197,7 @@ async def on_pr(payload: dict, token: str | None = None) -> None:
         f"origin/{base_branch}",
         repo_full_name,
     )
+    all_reports.append(report)
     if report.conflicts:
         await _notify(report, pr_number=pr_number)
 
@@ -210,5 +215,8 @@ async def on_pr(payload: dict, token: str | None = None) -> None:
             f"origin/{other_pr.head.ref}",
             repo_full_name,
         )
+        all_reports.append(report)
         if report.conflicts:
             await _notify(report, pr_number=pr_number)
+
+    return all_reports
