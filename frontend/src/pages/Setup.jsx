@@ -434,20 +434,35 @@ function TestStep({ onBack }) {
           <h2 className="text-3xl font-bold text-white mb-3">You're all set!</h2>
           <p className="text-slate-400 mb-8">GitMax is configured and ready to detect conflicts.</p>
 
-          <div className="rounded-xl border border-slate-700 bg-slate-900/80 p-5 max-w-md mx-auto mb-8">
-            <p className="text-sm text-slate-400 mb-2">Set this as your GitHub webhook URL:</p>
+          {/* mar15 use actual server origin for webhook URL */}
+          <div className="rounded-xl border border-slate-700 bg-slate-900/80 p-5 max-w-lg mx-auto mb-6">
+            <p className="text-sm text-slate-400 mb-2">Add this as a webhook in your GitHub repo:</p>
+            <p className="text-xs text-slate-500 mb-3">
+              Go to <span className="text-slate-300">Settings → Webhooks → Add webhook</span> and paste this Payload URL:
+            </p>
             <div className="flex items-center gap-2">
-              <code className="flex-1 bg-slate-800 px-4 py-2.5 rounded-lg text-blue-400 text-sm font-mono">
-                https://your-server/webhooks/github
+              <code className="flex-1 bg-slate-800 px-4 py-2.5 rounded-lg text-blue-400 text-sm font-mono text-left overflow-x-auto">
+                {window.location.origin.replace(':5173', ':8000')}/webhooks/github
               </code>
               <button
-                onClick={() => navigator.clipboard.writeText('https://your-server/webhooks/github')}
-                className="px-3 py-2.5 rounded-lg bg-slate-800 text-slate-400 hover:text-white transition-colors"
+                onClick={() => navigator.clipboard.writeText(
+                  window.location.origin.replace(':5173', ':8000') + '/webhooks/github'
+                )}
+                className="px-3 py-2.5 rounded-lg bg-slate-800 text-slate-400 hover:text-white transition-colors shrink-0"
                 title="Copy"
               >
                 📋
               </button>
             </div>
+          </div>
+
+          <div className="rounded-xl border border-slate-700/50 bg-slate-900/30 p-4 max-w-lg mx-auto mb-8 text-left">
+            <p className="text-xs font-medium text-slate-300 mb-2">Webhook settings:</p>
+            <ul className="text-xs text-slate-400 space-y-1">
+              <li>• <span className="text-slate-300">Content type:</span> application/json</li>
+              <li>• <span className="text-slate-300">Events:</span> Pull requests, Pushes, Issue comments</li>
+              <li>• <span className="text-slate-300">Secret:</span> the webhook secret you entered in step 2</li>
+            </ul>
           </div>
 
           <Link
