@@ -22,7 +22,8 @@ def generate_app_jwt():
     payload = {
         "iat": int(time.time()),
         "exp": int(time.time()) + 600,
-        "iss": app_id,
+        #mar15 cast app_id to str — JWT spec requires iss to be a string
+        "iss": str(app_id),
     }
 
     return jwt.encode(payload, private_key, algorithm="RS256")
