@@ -9,28 +9,63 @@ Usage:
 import hashlib
 import hmac
 import json
+#mar15 moved os import to top with other stdlib imports
+import os
 import sys
+import subprocess
 
 import httpx
+from pathlib import Path
+from dotenv import load_dotenv
+
+# Load .env file if it exists
+dotenv_path = Path(__file__).parent.parent / ".env"
+if dotenv_path.exists():
+    load_dotenv(dotenv_path)
 
 SERVER_URL = "http://localhost:8000/webhooks/github"
-WEBHOOK_SECRET = ""  # Set to match your .env GITHUB_WEBHOOK_SECRET
+WEBHOOK_SECRET = os.getenv("GITHUB_WEBHOOK_SECRET", "")
 
-# Sample payloads modeled after real GitHub webhook events
+# GitHub repo info
+REPO_FULL_NAME = "rohanh03/github-conflict-ai"
+REPO_CLONE_URL = f"https://github.com/{REPO_FULL_NAME}.git"
+LOCAL_REPO_PATH = Path(__file__).parent.parent  # assumes script is in repo folder
+INSTALLATION_ID = int(os.getenv("GITHUB_APP_INSTALLATION_ID", "123456"))
+
+
+def get_latest_sha(branch: str) -> str:
+    """Get the latest commit SHA for a branch in the local git repo."""
+    try:
+        output = subprocess.check_output(
+            ["git", "rev-parse", branch], cwd=LOCAL_REPO_PATH
+        )
+        return output.decode().strip()
+    except subprocess.CalledProcessError:
+        print(f"Error: Could not find branch '{branch}' in local repo")
+        sys.exit(1)
+
+
+# Automatically get SHAs
+LATEST_SHA = get_latest_sha("feature-test-comment")  # branch you are testing
+#mar15 removed redundant MAIN_LATEST_SHA (identical to PREVIOUS_SHA)
+MAIN_SHA = get_latest_sha("main")
+
 PUSH_PAYLOAD = {
-    "ref": "refs/heads/feature-auth",
-    "before": "abc123",
-    "after": "def456",
+    #mar15 removed unnecessary f-string (no interpolation)
+    "ref": "refs/heads/feature-test-comment",
+    "before": MAIN_SHA,
+    "after": LATEST_SHA,
     "repository": {
-        "full_name": "test-org/test-repo",
-        "clone_url": "https://github.com/test-org/test-repo.git",
+        "full_name": REPO_FULL_NAME,
+        "clone_url": REPO_CLONE_URL,
     },
-    "pusher": {"name": "developer1"},
+    "installation": {"id": INSTALLATION_ID},
+    "pusher": {"name": "alessandroiucci"},
     "commits": [
         {
-            "id": "def456",
-            "message": "Add auth middleware, rename validate_token to verify_token",
-            "author": {"name": "developer1"},
+            "id": LATEST_SHA,
+            "message": "Test bot commenting",
+            "author": {"name": "alessandroiucci"},
         }
     ],
 }
@@ -40,16 +75,17 @@ PR_PAYLOAD = {
     "number": 1,
     "pull_request": {
         "number": 1,
-        "title": "Add payment processing endpoints",
-        "user": {"login": "developer2"},
-        "head": {"ref": "feature-payments", "sha": "abc123"},
-        "base": {"ref": "main", "sha": "xyz789"},
-        "body": "Adds payment processing with transaction history.",
+        "title": "Test PR for bot",
+        "user": {"login": "alessandroiucci"},
+        "head": {"ref": "feature-test-comment", "sha": LATEST_SHA},
+        "base": {"ref": "main", "sha": MAIN_SHA},
+        "body": "Testing bot comments on PR.",
     },
     "repository": {
-        "full_name": "test-org/test-repo",
-        "clone_url": "https://github.com/test-org/test-repo.git",
+        "full_name": REPO_FULL_NAME,
+        "clone_url": REPO_CLONE_URL,
     },
+    "installation": {"id": INSTALLATION_ID},
 }
 
 PAYLOADS = {

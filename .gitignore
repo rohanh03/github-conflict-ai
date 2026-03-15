@@ -1,3 +1,5 @@
+#mar15 added .DS_Store to gitignore
+.DS_Store
 __pycache__/
 *.py[cod]
 *.egg-info/

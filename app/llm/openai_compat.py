@@ -1,4 +1,5 @@
 import logging
+import os
 
 import httpx
 
@@ -8,7 +9,18 @@ logger = logging.getLogger(__name__)
 class OpenAICompatClient:
     """LLM client compatible with any OpenAI-style chat completions API."""
 
-    def __init__(self, api_base: str, api_key: str, model: str):
+    def __init__(self, api_base: str = None, api_key: str = None, model: str = "openai/gpt-oss-120b"):
+        # Use hackathon server if no key is provided
+        hackathon_base = "https://vjioo4r1vyvcozuj.us-east-2.aws.endpoints.huggingface.cloud/v1"
+        if not api_key:
+            logger.info("No OPENAI_API_KEY found. Using hackathon GPT-OSS server with dummy key.")
+            api_base = hackathon_base
+            api_key = "test"
+
+        #mar15 default api_base to hackathon URL if None to avoid AttributeError on rstrip
+        if not api_base:
+            api_base = hackathon_base
+
         self.api_base = api_base.rstrip("/")
         self.api_key = api_key
         self.model = model
