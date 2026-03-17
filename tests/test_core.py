@@ -405,7 +405,7 @@ class TestDispatchEvent:
 
         mock_token.assert_called_once_with(123)
         mock_on_pr.assert_called_once_with(payload, "fake-token")
-        mock_summarize.assert_called_once_with(payload, conflict_reports=[])
+        mock_summarize.assert_called_once_with(payload, token="fake-token", conflict_reports=[])
 
     @pytest.mark.asyncio
     @patch("app.webhooks.events.get_installation_token", new_callable=AsyncMock)

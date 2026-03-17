@@ -106,13 +106,17 @@ async def _detect_conflicts_between(
     )
 
 
-async def _notify(report: ConflictReport, pr_number: int | None = None) -> None:
+async def _notify(
+    report: ConflictReport,
+    pr_number: int | None = None,
+    token: str | None = None,
+) -> None:
     """Send conflict report via GitHub comment and Slack."""
     if not report.conflicts:
         logger.info("No conflicts found — skipping notifications")
         return
 
-    repo = get_repo(report.repo_full_name)
+    repo = get_repo(report.repo_full_name, token)
     comment_body = format_conflict_comment(report)
 
     if pr_number:
@@ -150,7 +154,7 @@ async def on_push(payload: dict, token: str | None = None) -> None:
         )
 
         if report.conflicts:
-            await _notify(report, pr_number=pr.number)
+            await _notify(report, pr_number=pr.number, token=token)
 
 
 #mar15 changed return type to list[ConflictReport] so callers can use conflict data
@@ -199,7 +203,7 @@ async def on_pr(payload: dict, token: str | None = None) -> list[ConflictReport]
     )
     all_reports.append(report)
     if report.conflicts:
-        await _notify(report, pr_number=pr_number)
+        await _notify(report, pr_number=pr_number, token=token)
 
     # Also compare against other open PRs targeting the same base
     open_prs = get_open_prs(repo)
@@ -217,6 +221,6 @@ async def on_pr(payload: dict, token: str | None = None) -> list[ConflictReport]
         )
         all_reports.append(report)
         if report.conflicts:
-            await _notify(report, pr_number=pr_number)
+            await _notify(report, pr_number=pr_number, token=token)
 
     return all_reports
