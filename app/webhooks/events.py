@@ -2,9 +2,11 @@ import logging
 from typing import Optional  #mar15 Python 3.9 compat
 
 from app.api.activity_log import log_event  #mar15 wire activity logging for dashboard
+from app.api.repo_auth_store import get_repo_token
 from app.conflict.detector import on_push, on_pr
 from app.pr_summarizer.summarizer import on_pr_summarize
 from app.github_client.github_app_auth import get_installation_token
+from config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -15,12 +17,26 @@ async def dispatch_event(event_type: str, payload: dict, installation_id: Option
     logger.info("Dispatching event=%s action=%s", event_type, action)
 
     try:
+        repo = payload.get("repository", {}).get("full_name", "")
         token = None
+        auth_source = "none"
         if installation_id:
             token = await get_installation_token(installation_id)
+            auth_source = "installation" if token else "none"
+        elif repo:
+            repo_token = get_repo_token(repo)
+            if repo_token:
+                token = repo_token
+                auth_source = "repo_pat"
+            elif settings.github_token:
+                token = settings.github_token
+                auth_source = "global_pat"
 
-        #mar15 extract repo name for activity logging
-        repo = payload.get("repository", {}).get("full_name", "")
+        logger.info(
+            "Resolved GitHub auth for repo=%s via %s",
+            repo or "unknown",
+            auth_source,
+        )
 
         if event_type == "push":
             await on_push(payload, token)

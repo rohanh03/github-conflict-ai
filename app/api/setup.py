@@ -13,6 +13,7 @@ from pydantic import BaseModel
 
 from app.api.activity_log import get_recent, get_stats
 from app.api.env_writer import update_env
+from app.api.repo_auth_store import get_repo_token, save_repo_token
 from config import settings
 
 logger = logging.getLogger(__name__)
@@ -30,6 +31,7 @@ _start_time = time.time()
 class AuthSetup(BaseModel):
     mode: str  # "pat" or "app"
     github_token: Optional[str] = ""
+    repo_full_name: Optional[str] = ""
     github_app_id: Optional[str] = ""
     github_private_key_path: Optional[str] = ""
     github_webhook_secret: Optional[str] = ""
@@ -43,6 +45,10 @@ class LLMSetup(BaseModel):
 
 class SlackSetup(BaseModel):
     slack_webhook_url: Optional[str] = ""
+
+
+class GitHubTestRequest(BaseModel):
+    repo_full_name: Optional[str] = ""
 
 
 # ---------------------------------------------------------------------------
@@ -96,6 +102,8 @@ async def setup_auth(data: AuthSetup):
             #mar15 clear app settings when switching to PAT mode
             updates["GITHUB_APP_ID"] = "0"
             updates["GITHUB_PRIVATE_KEY_PATH"] = ""
+            if data.repo_full_name and data.github_token:
+                save_repo_token(data.repo_full_name, data.github_token)
         elif data.mode == "app":
             updates["GITHUB_APP_ID"] = data.github_app_id or "0"
             updates["GITHUB_PRIVATE_KEY_PATH"] = data.github_private_key_path or ""
@@ -145,17 +153,23 @@ async def setup_slack(data: SlackSetup):
 # ---------------------------------------------------------------------------
 
 @router.post("/test/github")
-async def test_github():
+async def test_github(data: Optional[GitHubTestRequest] = None):
     """Test GitHub connection with current credentials."""
     from config import settings as s
     try:
-        token = s.github_token
+        repo_full_name = (data.repo_full_name if data else "") or ""
+        token = get_repo_token(repo_full_name) if repo_full_name else None
+        token = token or s.github_token
         if not token:
             return {"success": False, "message": "No GitHub token configured."}
 
         async with httpx.AsyncClient() as client:
+            url = "https://api.github.com/user"
+            if repo_full_name:
+                url = f"https://api.github.com/repos/{repo_full_name}"
+
             resp = await client.get(
-                "https://api.github.com/user",
+                url,
                 headers={
                     "Authorization": f"Bearer {token}",
                     "Accept": "application/vnd.github+json",
@@ -164,6 +178,13 @@ async def test_github():
             )
             if resp.status_code == 200:
                 data = resp.json()
+                if repo_full_name:
+                    return {
+                        "success": True,
+                        "message": f"Repo access confirmed for {data.get('full_name', repo_full_name)}",
+                        "repo_full_name": data.get("full_name", repo_full_name),
+                        "private": data.get("private", False),
+                    }
                 return {
                     "success": True,
                     "message": f"Authenticated as {data.get('login', 'unknown')}",

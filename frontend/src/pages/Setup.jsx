@@ -137,16 +137,31 @@ function CredentialsStep({ authMode, creds, setCreds, onNext, onBack }) {
 
       <div className="space-y-4">
         {authMode === 'pat' ? (
-          <div>
-            <label className="block text-sm font-medium text-slate-300 mb-1.5">GitHub Token</label>
-            <input
-              type="password"
-              placeholder="ghp_xxxxxxxxxxxx"
-              value={creds.github_token || ''}
-              onChange={(e) => setCreds({ ...creds, github_token: e.target.value })}
-              className="w-full px-4 py-3 rounded-xl bg-slate-800 border border-slate-700 text-white placeholder-slate-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all"
-            />
-          </div>
+          <>
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-1.5">Repository Full Name</label>
+              <input
+                type="text"
+                placeholder="owner/private-repo"
+                value={creds.repo_full_name || ''}
+                onChange={(e) => setCreds({ ...creds, repo_full_name: e.target.value })}
+                className="w-full px-4 py-3 rounded-xl bg-slate-800 border border-slate-700 text-white placeholder-slate-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all font-mono text-sm"
+              />
+              <p className="mt-2 text-xs text-slate-500">
+                Save the exact repo you will attach the webhook to so GitMax can match incoming events to the right PAT.
+              </p>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-1.5">GitHub Token</label>
+              <input
+                type="password"
+                placeholder="ghp_xxxxxxxxxxxx"
+                value={creds.github_token || ''}
+                onChange={(e) => setCreds({ ...creds, github_token: e.target.value })}
+                className="w-full px-4 py-3 rounded-xl bg-slate-800 border border-slate-700 text-white placeholder-slate-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all"
+              />
+            </div>
+          </>
         ) : (
           <>
             <div>
@@ -341,7 +356,7 @@ function SlackStep({ slack, setSlack, onNext, onBack }) {
   )
 }
 
-function TestStep({ onBack }) {
+function TestStep({ onBack, creds }) {
   const [tests, setTests] = useState({
     github: { status: 'idle', message: '' },
     llm: { status: 'idle', message: '' },
@@ -377,7 +392,7 @@ function TestStep({ onBack }) {
   }
 
   const testCards = [
-    { key: 'github', label: 'GitHub Connection', fn: api.testGithub },
+    { key: 'github', label: 'GitHub Connection', fn: () => api.testGithub({ repo_full_name: creds.repo_full_name || '' }) },
     { key: 'llm', label: 'LLM Endpoint', fn: api.testLLM },
     { key: 'slack', label: 'Slack Webhook', fn: api.testSlack },
   ]
@@ -504,7 +519,7 @@ export default function Setup() {
       {step === 1 && <CredentialsStep authMode={authMode} creds={creds} setCreds={setCreds} onNext={next} onBack={back} />}
       {step === 2 && <LLMStep llm={llm} setLLM={setLLM} onNext={next} onBack={back} />}
       {step === 3 && <SlackStep slack={slack} setSlack={setSlack} onNext={next} onBack={back} />}
-      {step === 4 && <TestStep onBack={back} />}
+      {step === 4 && <TestStep onBack={back} creds={creds} />}
     </div>
   )
 }

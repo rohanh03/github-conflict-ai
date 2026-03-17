@@ -20,7 +20,7 @@ export const api = {
   saveSlack: (data) => request('/api/setup/slack', { method: 'POST', body: JSON.stringify(data) }),
 
   // Tests
-  testGithub: () => request('/api/test/github', { method: 'POST' }),
+  testGithub: (data = {}) => request('/api/test/github', { method: 'POST', body: JSON.stringify(data) }),
   testLLM: () => request('/api/test/llm', { method: 'POST' }),
   testSlack: () => request('/api/test/slack', { method: 'POST' }),
 
