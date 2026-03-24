@@ -470,6 +470,37 @@ class TestGitHubAppAuth:
 
 
 # ---------------------------------------------------------------------------
+# GitHub client auth behavior
+# ---------------------------------------------------------------------------
+
+class TestGitHubClient:
+    """Test GitHub client token handling for repo operations."""
+
+    @pytest.mark.asyncio
+    @patch("app.github_client.client.clone_or_fetch", new_callable=AsyncMock)
+    @patch("app.github_client.client.settings")
+    async def test_ensure_repo_cloned_prefers_repo_auth_token(self, mock_settings, mock_clone):
+        from app.github_client.client import ensure_repo_cloned
+
+        mock_settings.repo_clone_dir = "/tmp/conflict-ai-repos"
+        mock_settings.github_token = ""
+        mock_clone.return_value = "/tmp/conflict-ai-repos/owner/repo"
+
+        repo = MagicMock()
+        repo.full_name = "owner/repo"
+        repo.clone_url = "https://github.com/owner/repo.git"
+        repo._requester.auth.token = "installation-token"
+
+        result = await ensure_repo_cloned(repo)
+
+        assert result == "/tmp/conflict-ai-repos/owner/repo"
+        mock_clone.assert_awaited_once_with(
+            "https://x-access-token:installation-token@github.com/owner/repo.git",
+            "/tmp/conflict-ai-repos/owner/repo",
+        )
+
+
+# ---------------------------------------------------------------------------
 # OpenAI compat client defaults
 # ---------------------------------------------------------------------------
 

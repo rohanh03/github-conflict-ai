@@ -47,9 +47,12 @@ def get_github(token: str | None = None) -> Github:
 
 
 def get_repo(full_name: str, token: str | None = None) -> Repository:
-    """Get a repository object by full name (owner/repo)."""
-    return get_github(token).get_repo(full_name)
+    if token:
+        gh = Github(auth=Auth.Token(token))
+    else:
+        gh = get_github()
 
+    return gh.get_repo(full_name)
 
 def get_open_prs(repo: Repository) -> list[PullRequest]:
     """Get all open pull requests for a repo."""
@@ -88,7 +91,8 @@ async def ensure_repo_cloned(repo: Repository) -> str:
     repo_path = os.path.join(settings.repo_clone_dir, repo.full_name)
     clone_url = repo.clone_url
     # Inject token into clone URL for private repos
-    token = getattr(repo._requester.auth, "token", None) or settings.github_token
+    token = getattr(getattr(repo, "_requester", None), "auth", None)
+    token = getattr(token, "token", None) or settings.github_token
     if token:
         clone_url = clone_url.replace(
             "https://", f"https://x-access-token:{token}@"
