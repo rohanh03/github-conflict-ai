@@ -144,6 +144,6 @@ def truncate_diff(diff_text: str, max_lines: int = 4000) -> str:
     # Keep first max_lines lines with a truncation notice
     truncated = lines[:max_lines]
     truncated.append(
-        f"\n... [TRUNCATED: {len(lines) - max_lines} lines omitted] ..."
+        f"... [TRUNCATED: {len(lines) - max_lines} lines omitted] ..."
     )
     return "\n".join(truncated)

@@ -1,24 +1,47 @@
 import logging
+from typing import Optional  #mar15 Python 3.9 compat
 
+from app.api.activity_log import log_event  #mar15 wire activity logging for dashboard
+from app.api.repo_auth_store import get_repo_token
 from app.conflict.detector import on_push, on_pr
 from app.pr_summarizer.summarizer import on_pr_summarize
 from app.github_client.github_app_auth import get_installation_token
+from config import settings
 
 logger = logging.getLogger(__name__)
 
 
-async def dispatch_event(event_type: str, payload: dict, installation_id: int | None = None) -> None:
+async def dispatch_event(event_type: str, payload: dict, installation_id: Optional[int] = None) -> None:
     """Route GitHub webhook events to the appropriate handler."""
     action = payload.get("action", "")
     logger.info("Dispatching event=%s action=%s", event_type, action)
 
     try:
+        repo = payload.get("repository", {}).get("full_name", "")
         token = None
+        auth_source = "none"
         if installation_id:
             token = await get_installation_token(installation_id)
+            auth_source = "installation" if token else "none"
+        elif repo:
+            repo_token = get_repo_token(repo)
+            if repo_token:
+                token = repo_token
+                auth_source = "repo_pat"
+            elif settings.github_token:
+                token = settings.github_token
+                auth_source = "global_pat"
+
+        logger.info(
+            "Resolved GitHub auth for repo=%s via %s",
+            repo or "unknown",
+            auth_source,
+        )
 
         if event_type == "push":
             await on_push(payload, token)
+            #mar15 log push event to activity feed
+            log_event(event_type="push", repo=repo, action="push")
 
         elif event_type == "pull_request" and action in (
             "opened",
@@ -27,7 +50,17 @@ async def dispatch_event(event_type: str, payload: dict, installation_id: int | 
         ):
             #mar15 capture conflict reports from on_pr and pass to summarizer
             conflict_reports = await on_pr(payload, token)
-            await on_pr_summarize(payload, conflict_reports=conflict_reports)
+            await on_pr_summarize(payload, token=token, conflict_reports=conflict_reports)
+            #mar15 log PR event with conflict count to activity feed
+            pr_num = payload.get("pull_request", {}).get("number")
+            n_conflicts = sum(len(r.conflicts) for r in (conflict_reports or []))
+            log_event(
+                event_type="pull_request",
+                repo=repo,
+                pr_number=pr_num,
+                action=action,
+                conflicts_found=n_conflicts,
+            )
 
         elif event_type == "issue_comment" and action == "created":
             body = payload.get("comment", {}).get("body", "")
@@ -36,6 +69,8 @@ async def dispatch_event(event_type: str, payload: dict, installation_id: int | 
                 if "pull_request" in payload.get("issue", {}):
                     await on_pr(payload, token)
                 logger.info("On-demand analysis triggered via comment")
+                #mar15 log comment-triggered analysis
+                log_event(event_type="issue_comment", repo=repo, action="mention")
 
         else:
             logger.debug("Ignoring event=%s action=%s", event_type, action)

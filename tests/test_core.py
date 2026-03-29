@@ -405,7 +405,7 @@ class TestDispatchEvent:
 
         mock_token.assert_called_once_with(123)
         mock_on_pr.assert_called_once_with(payload, "fake-token")
-        mock_summarize.assert_called_once_with(payload, conflict_reports=[])
+        mock_summarize.assert_called_once_with(payload, token="fake-token", conflict_reports=[])
 
     @pytest.mark.asyncio
     @patch("app.webhooks.events.get_installation_token", new_callable=AsyncMock)
@@ -467,6 +467,37 @@ class TestGitHubAppAuth:
         mock_settings.github_private_key_path = ""
         with pytest.raises(RuntimeError, match="GITHUB_PRIVATE_KEY_PATH"):
             generate_app_jwt()
+
+
+# ---------------------------------------------------------------------------
+# GitHub client auth behavior
+# ---------------------------------------------------------------------------
+
+class TestGitHubClient:
+    """Test GitHub client token handling for repo operations."""
+
+    @pytest.mark.asyncio
+    @patch("app.github_client.client.clone_or_fetch", new_callable=AsyncMock)
+    @patch("app.github_client.client.settings")
+    async def test_ensure_repo_cloned_prefers_repo_auth_token(self, mock_settings, mock_clone):
+        from app.github_client.client import ensure_repo_cloned
+
+        mock_settings.repo_clone_dir = "/tmp/conflict-ai-repos"
+        mock_settings.github_token = ""
+        mock_clone.return_value = "/tmp/conflict-ai-repos/owner/repo"
+
+        repo = MagicMock()
+        repo.full_name = "owner/repo"
+        repo.clone_url = "https://github.com/owner/repo.git"
+        repo._requester.auth.token = "installation-token"
+
+        result = await ensure_repo_cloned(repo)
+
+        assert result == "/tmp/conflict-ai-repos/owner/repo"
+        mock_clone.assert_awaited_once_with(
+            "https://x-access-token:installation-token@github.com/owner/repo.git",
+            "/tmp/conflict-ai-repos/owner/repo",
+        )
 
 
 # ---------------------------------------------------------------------------

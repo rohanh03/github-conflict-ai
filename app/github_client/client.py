@@ -15,8 +15,11 @@ logger = logging.getLogger(__name__)
 _github_client: Github | None = None
 
 
-def get_github() -> Github:
+def get_github(token: str | None = None) -> Github:
     """Get an authenticated GitHub client (PAT or App installation)."""
+    if token:
+        return Github(auth=Auth.Token(token))
+
     global _github_client
     if _github_client is not None:
         return _github_client
@@ -43,10 +46,13 @@ def get_github() -> Github:
     return _github_client
 
 
-def get_repo(full_name: str) -> Repository:
-    """Get a repository object by full name (owner/repo)."""
-    return get_github().get_repo(full_name)
+def get_repo(full_name: str, token: str | None = None) -> Repository:
+    if token:
+        gh = Github(auth=Auth.Token(token))
+    else:
+        gh = get_github()
 
+    return gh.get_repo(full_name)
 
 def get_open_prs(repo: Repository) -> list[PullRequest]:
     """Get all open pull requests for a repo."""
@@ -85,8 +91,10 @@ async def ensure_repo_cloned(repo: Repository) -> str:
     repo_path = os.path.join(settings.repo_clone_dir, repo.full_name)
     clone_url = repo.clone_url
     # Inject token into clone URL for private repos
-    if settings.github_token:
+    token = getattr(getattr(repo, "_requester", None), "auth", None)
+    token = getattr(token, "token", None) or settings.github_token
+    if token:
         clone_url = clone_url.replace(
-            "https://", f"https://x-access-token:{settings.github_token}@"
+            "https://", f"https://x-access-token:{token}@"
         )
     return await clone_or_fetch(clone_url, repo_path)

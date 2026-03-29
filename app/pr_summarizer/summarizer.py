@@ -64,7 +64,11 @@ def _format_conflict_section(conflict_reports: list[ConflictReport] | None) -> s
 
 
 #mar15 added conflict_reports param to include cross-branch conflict info in summary
-async def on_pr_summarize(payload: dict, conflict_reports: list[ConflictReport] | None = None) -> None:
+async def on_pr_summarize(
+    payload: dict,
+    token: str | None = None,
+    conflict_reports: list[ConflictReport] | None = None,
+) -> None:
     """Handle a pull_request event — generate and post a PR summary."""
     pr_data = payload.get("pull_request", {})
     if not pr_data:
@@ -83,7 +87,7 @@ async def on_pr_summarize(payload: dict, conflict_reports: list[ConflictReport] 
     logger.info("Generating PR summary for %s#%d", repo_full_name, pr_number)
     logger.info("PR author=%s triggered_by=%s", author, sender)
 
-    repo = get_repo(repo_full_name)
+    repo = get_repo(repo_full_name, token)
 
     # Gather context
     diff_content = get_pr_diff(repo, pr_number)
